@@ -1,0 +1,8 @@
+# Ignore output files
+*.h5
+*.hdf
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
