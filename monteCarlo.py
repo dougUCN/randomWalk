@@ -9,9 +9,12 @@ from randomWalkParticle import neutron1D
 from tqdm import trange
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-n', '--n', type=int, required=True, help='Number of particles to simulate')
     parser.add_argument('-f', '--file', type=str, required=True, help='Stores end particle states to h5 file')
+    parser.add_argument('-lpb', '--lossPerBounce', type=float, default=1E-4, help='Loss per bounce on pipe')
+    parser.add_argument('-ns', '--nonSpec', type=float, default=0.05, help='Chance for nonspecular bounce')
+    parser.add_argument('-wl', '--windowLoss', type=float, default=0.06, help='Chance of neutron loss for single window pass')
     args = parser.parse_args()
 
     ## parameters ##
@@ -20,10 +23,9 @@ def main():
     pipeL  = 12         # Total length of the pipe [meters]
     start  = 6          # starting position [meters]
     window = 9          # PPM window location
-    nonspec = 0.05      # Chance for a nonspecular bounce
-    lossPerBounce = 1E-4 # Loss per bounce (NiPh)
-    windowLoss = 0.06   # Chance for loss when passing through window
-    # windowLoss = 0   # Chance for loss when passing through window
+    nonspec = args.nonSpec      # Chance for a nonspecular bounce
+    lossPerBounce = args.lossPerBounce # Loss per bounce (NiPh)
+    windowLoss = args.windowLoss   # Chance for loss when passing through window
     ################
 
     # Prep file IO
@@ -73,7 +75,7 @@ def calcEnvironment(pipeID, pipeL, cellEntranceID, start, window, nonspec, lossP
     Loss Per Bounce converted to loss per random walk step
     '''
     parameters = namedtuple('parameters',['cellChance','cell','source',
-                            'gateValve', 'window','mfp','lossPerStep', 'windowLoss'])
+                            'gateValve', 'window','mfp','lossPerStep', 'windowLoss', 'lossPerBounce'])
     mfp = 1/nonspec * 4 * (pipeL * (pipeID/2)**2 * np.pi) / (pipeID * np.pi * pipeL + 2* (pipeID/2)**2 * np.pi)
     cell = np.ceil(pipeL/mfp)
     window = window/mfp
@@ -82,7 +84,7 @@ def calcEnvironment(pipeID, pipeL, cellEntranceID, start, window, nonspec, lossP
     lossPerStep = (1/nonspec) * lossPerBounce
 
     return parameters(cellChance=cellChance, cell=cell, window=window, mfp=mfp,
-                        gateValve=gatevalve, source=0, lossPerStep=lossPerStep, windowLoss=windowLoss)
+                        gateValve=gatevalve, source=0, lossPerStep=lossPerStep, windowLoss=windowLoss, lossPerBounce=lossPerBounce)
 
 def noExt(filename, extensionName):
     '''Removes the extension name from a filename if present'''

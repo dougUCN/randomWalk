@@ -1,8 +1,12 @@
 # Ignore output files
 *.h5
 *.hdf
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Jupyter notebook
+**/*.ipynb_checkpoints/
