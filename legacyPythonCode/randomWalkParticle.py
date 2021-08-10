@@ -7,36 +7,29 @@ class neutron1D:
 
     def __init__(self, params):
         '''
-        PARAMS must have fields [gateValve, window, cell, source, cellChance, lossPerStep, windowLoss]
-        Random walk step size = 1
-        All fields other than 'window' should be an int
+        PARAMS must have fields [gateValve, window, cell, source, cellChance, lossPerStep, windowLoss, stepSize]
         '''
         self.particleNum = 0
         try:
-            self.gateValve = params.gateValve
-            self.window = params.window
-            self.cell = params.cell
-            self.source = params.source
-            self.cellChance = params.cellChance     # Chance for particle to enter cell
-            self.lossPerStep = params.lossPerStep   # Loss per random walk step
-            self.windowLoss = params.windowLoss
-            if self.window.is_integer():
-                raise TypeError('For window hit logging, please make params.window a non-integer')
+            self.gateValve = getattr(params, 'gateValve')
+            self.window = getattr(params, 'window')
+            self.cell = getattr(params, 'cell')
+            self.source = getattr(params, 'source')
+            self.cellChance = getattr(params, 'cellChance')     # Chance for particle to enter cell
+            self.lossPerStep = getattr(params, 'lossPerStep')   # Loss per random walk step
+            self.windowLoss = getattr(params, 'windowLoss')
+            self.stepSize = getattr(params, 'stepSize')
+
         except AttributeError as error:
+            sys.stderr.write(f'\n{error}')
             sys.stderr.write('\nERROR: neutron1D.__init__(self, params)\n' + self.__init__.__doc__ + '\n')
-            sys.exit()
-        except TypeError as error:
-            sys.stderr.write('\nERROR: neutron1D.__init__(self, params)\n' + self.__init__.__doc__ + '\n')
-            sys.stderr.write(str(error) + '\n\n')
             sys.exit()
 
         self.resetState()
-        if self.source < self.cell: # bounds of the 1D random walk line
-            self.leftBound = self.source
-            self.rightBound = self.cell
+        if self.source < self.cell: # Shouldn't matter where the source/cell are relative to each other
+            self.sourceLeftCellRight = True
         else:
-            self.leftBound = self.cell
-            self.rightBound = self.source
+            self.sourceLeftCellRight = False
 
     def resetState(self, label = 0):
         self.particleNum = label
@@ -57,38 +50,39 @@ class neutron1D:
 
     def step(self):
         self.prevLocation = self.location
-        self.location += self.rng.choice([-1,1])
+        self.location += self.rng.choice([-1,1]) * self.stepSize
         self.totalSteps += 1
         # Check collisions
         if self.crossedWindow():
             self.windowHits += 1
             if self.rng.random() < self.windowLoss: # chance for loss on the window
                 self.status = 'window'
-        elif self.location == self.source: # neutrons get absorbed by the source
+        elif (self.location <= self.source and self.sourceLeftCellRight) \
+              or (self.location >= self.source and not self.sourceLeftCellRight): # neutrons get absorbed by the source
             self.status = 'source'
-        elif self.location == self.cell:   # chance for neutrons to get into cell (we assume they won't leave)
+        elif (self.location >= self.cell and self.sourceLeftCellRight) \
+              or (self.location <= self.cell and not self.sourceLeftCellRight):   # chance for neutrons to get into cell (we assume they won't leave)
             if self.rng.random() < self.cellChance:
                 self.status = 'cell'
             else: # neutron rejected from entrance
-                self.prevLocation = self.location
-                self.location -= 1
+                self.location = self.prevLocation
                 self.totalSteps += 1
                 self.cellRejections += 1
         elif self.rng.random() < self.lossPerStep:  # chance to be absorbed by pipe
             self.status = 'pipe'
-        elif (self.location > self.rightBound) or (self.location < self.leftBound):
-            self.status = 'error'
-            raise Exception('Something went wrong. Neutron out of bounds')
-
 
     def walk(self):
         while (self.totalSteps < self.maxSteps) and (self.status=='alive'):
             self.step()
 
     def crossedWindow(self):
-        if self.prevLocation < self.window < self.location:
+        if self.prevLocation == None:
+            return False
+        elif self.prevLocation < self.window < self.location:
             return True
         elif self.prevLocation > self.window > self.location:
+            return True
+        elif self.location == self.window:
             return True
         else:
             return False

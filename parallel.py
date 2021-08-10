@@ -7,18 +7,18 @@ import os
 import sys
 
 jobfile = 'parallelJobs.txt'
-# params = np.linspace(0,0.1, num=11)
-# params= [1E-6, 1E-5, 1E-4, 1E-3, 1E-2]
-params = np.linspace(1E-5,1E-3,num=20)
+
+params = [ 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
 if not strtobool(input('\nRun jobs? (y/n): ')):
     print('Quitting...')
     sys.exit()
 
 with open(jobfile, 'w') as runfile:
-    for param in params:
-        # runfile.write(f'python3 monteCarlo.py -f windowLoss_{param:.2f} -n 500000 -wl {param}\n')
-        runfile.write(f'python3 monteCarlo.py -f lpb_{param:.2e}_noWL -n 500000 -lpb {param} -wl 0\n')
+    for i, param in enumerate(params):
 
-process = subprocess.Popen([f'parallel < {jobfile}'], shell=True)
+        runfile.write(f'./randomWalk_t.x --f cellExitMfpScan/mfp_{param:.2e}.h5 --n 1000000 --mfp2 {param} --progress false\n')
+        runfile.write(f'./randomWalk_t.x --f cellExitMfpScan/mfp_{param:.2e}_noWL.h5 --n 1000000 --wl 0 --mfp2 {param} --progress false\n')
+
+process = subprocess.Popen([f'parallel < {jobfile} --bar'], shell=True)
 print(f'Running {len(params)} jobs...')

@@ -1,7 +1,10 @@
 # Ignore output files
 *.h5
 *.hdf
-*.txt
+cellChance*/
+cellLifetime*/
+mfpScan/
+results*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -10,3 +13,16 @@ __pycache__/
 
 # Jupyter notebook
 **/*.ipynb_checkpoints/
+*.ipynb
+
+# cpp compiled executable
+*.x
+
+# CMake
+CMakeFiles/
+*.cmake
+CMakeCache.txt
+Makefile
+
+# parallel.py gnu parallel text file
+parallelJobs.txt

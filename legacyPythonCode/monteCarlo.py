@@ -14,19 +14,23 @@ def main():
     parser.add_argument('-f', '--file', type=str, required=True, help='Stores end particle states to h5 file')
     parser.add_argument('-lpb', '--lossPerBounce', type=float, default=1E-4, help='Loss per bounce on pipe')
     parser.add_argument('-ns', '--nonSpec', type=float, default=0.05, help='Chance for nonspecular bounce')
-    parser.add_argument('-wl', '--windowLoss', type=float, default=0.06, help='Chance of neutron loss for single window pass')
+    parser.add_argument('-wl', '--windowLoss', type=float, default=0.03, help='Chance of neutron loss for single window pass')
     args = parser.parse_args()
 
     ## parameters ##
     pipeID = 3 * 0.0254 # Inner diameter of the pipe [meters]
-    cellEntranceID = 2* 0.0254 # [m]
+    cellEntranceID = 0.0745 # [m]
     pipeL  = 12         # Total length of the pipe [meters]
     start  = 6          # starting position [meters]
-    window = 9          # PPM window location
+    window = 9.1          # PPM window location
     nonspec = args.nonSpec      # Chance for a nonspecular bounce
     lossPerBounce = args.lossPerBounce # Loss per bounce (NiPh)
     windowLoss = args.windowLoss   # Chance for loss when passing through window
     ################
+
+    if nonspec<=0:
+        print('ERROR: non specularity cannot be 0 for this calculation!!')
+        return
 
     # Prep file IO
     outputFormat = {'particleNum':     tables.Int64Col(pos=0),
@@ -46,7 +50,7 @@ def main():
 
     # Set up random walk 1D line
     params = calcEnvironment(pipeID, pipeL, cellEntranceID, start, window, nonspec, lossPerBounce, windowLoss)
-    print('### Converted input parameters ###')
+    print('### Input parameters ###')
     for field in params._fields:
         print("{:<20}{:<20}".format(field, getattr(params, field)) )
     # Save params to file
@@ -68,22 +72,18 @@ def main():
 
 def calcEnvironment(pipeID, pipeL, cellEntranceID, start, window, nonspec, lossPerBounce, windowLoss):
     '''
-    Calculates mean free path between nonspecular bounces (For a cylinder = 4V/A * number of specular bounces)
-    Converts starting position and window position from meters to integer multiples of this mfp
-    D2 source defined as 0, cell entrance defined at the other end of the pipe
-    Odds of getting into the cell = 1 -  [1 - (opening area)/(total inner surface of last segment)]^N_bounces
-    Loss Per Bounce converted to loss per random walk step
+    Cleans up parameters to pass to monte carlo
     '''
     parameters = namedtuple('parameters',['cellChance','cell','source',
-                            'gateValve', 'window','mfp','lossPerStep', 'windowLoss', 'lossPerBounce'])
-    mfp = 1/nonspec * 4 * (pipeL * (pipeID/2)**2 * np.pi) / (pipeID * np.pi * pipeL + 2* (pipeID/2)**2 * np.pi)
-    cell = np.ceil(pipeL/mfp)
-    window = window/mfp
-    gatevalve = np.ceil(start/mfp)
-    cellChance = 2 * (1 - ( 1-(cellEntranceID/2)**2/(pipeID*mfp) ) ** (1/nonspec))
+                            'gateValve', 'window','stepSize','lossPerStep', 'windowLoss', 'lossPerBounce'])
+    mfp = pipeID * np.sqrt( 2*(2-nonspec)/nonspec/3 )
+    cell = pipeL
+    window = window
+    gatevalve = start
+    cellChance = (1 - ( 1-(cellEntranceID/2)**2/(pipeID*mfp) ) ** (1/nonspec) )**2
     lossPerStep = (1/nonspec) * lossPerBounce
 
-    return parameters(cellChance=cellChance, cell=cell, window=window, mfp=mfp,
+    return parameters(cellChance=cellChance, cell=cell, window=window, stepSize=mfp,
                         gateValve=gatevalve, source=0, lossPerStep=lossPerStep, windowLoss=windowLoss, lossPerBounce=lossPerBounce)
 
 def noExt(filename, extensionName):
