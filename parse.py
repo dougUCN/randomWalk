@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
-import argparse, tables, json
+import argparse, tables
 import pandas as pd
 import numpy as np
 
@@ -11,12 +11,13 @@ def main():
 
     print(f'Reading {args.file}...', end='')
     infile = tables.open_file(args.file)
-    params = infile.root.branch.neutron1D.attrs.params # get run attributes
-    df = pd.DataFrame.from_records( infile.root.branch.neutron1D.read() ) # use either read() or read_where()
+    params = infile.root.table._v_attrs # get run attributes
+    for attr in params._f_list("user"):
+        print(f"{attr}: {getattr(params, attr)}")
+    df = pd.DataFrame.from_records( infile.root.table.read() ) # use either read() or read_where()
     infile.close()
     print('done. File closed')
 
-    print(json.dumps(params, indent=4))
 
     df['status'] = df['status'].str.decode("utf-8") # Status column in byte string format
 

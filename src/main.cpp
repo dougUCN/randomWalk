@@ -52,7 +52,7 @@ int main(int argc, const char *argv[])
     const double nonspec = vm["ns"].as<double>();                     // Chance for a nonspecular bounce
     const double lossPerBounce = vm["lpb"].as<double>();              // Loss per bounce (NiPh)
     const double windowLoss = vm["wl"].as<double>();                  // Chance for loss when passing through window
-    const double mfp = pipeID * sqrt( 2*(2-nonspec)/nonspec/3 );     // Mean free path
+    const double mfp = pipeID * sqrt( 2*(2-nonspec)/nonspec/3 );     // Mean free path. eq.  4.79, eq.  4.70, and eq.  4.48 in Golub
     const double mfp2 =  vm["mfp2"].as<double>();                     // Mean free path after neutron exits cell
     // const double mfp = vm["mfp"].as<double>();     // Mean free path
 
