@@ -12,12 +12,12 @@ def main():
     print(f'Reading {args.file}...', end='')
     infile = tables.open_file(args.file)
     params = infile.root.table._v_attrs # get run attributes
-    for attr in params._f_list("user"):
-        print(f"{attr}: {getattr(params, attr)}")
     df = pd.DataFrame.from_records( infile.root.table.read() ) # use either read() or read_where()
     infile.close()
     print('done. File closed')
 
+    for attr in params._f_list("user"):
+        print(f"{attr}: {getattr(params, attr)}")
 
     df['status'] = df['status'].str.decode("utf-8") # Status column in byte string format
 
