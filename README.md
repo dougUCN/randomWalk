@@ -23,6 +23,6 @@ to see available parameter options
 
 ## Utility scripts
 
-**parallel.py**: [Uses GNU parallel](https://www.gnu.org/software/parallel/) to run multiple random walks together
+**parallel.py**: Uses [GNU parallel](https://www.gnu.org/software/parallel/) to run multiple random walks together
 
 **parse.py**: Parse and plot the results of a `*.h5` file
